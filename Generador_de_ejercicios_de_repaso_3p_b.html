@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generador infinito de ejercicios</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#fff; --ink:#111827; --muted:#6b7280;
+  --brand:#4f46e5; --brand2:#7c3aed; --line:#e5e7eb;
+  --ok:#059669; --okbg:#ecfdf5; --err:#dc2626; --errbg:#fef2f2;
+  --warn:#b45309; --warnbg:#fffbeb;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:24px 14px 32px}
+.card{background:var(--card);border-radius:16px;box-shadow:0 10px 30px rgba(17,24,39,.08);overflow:hidden}
+.head{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:24px 28px}
+.head h1{margin:0 0 6px;font-size:1.6rem;line-height:1.2}
+.head p{margin:0;opacity:.93;font-size:.98rem}
+.body{padding:22px 28px 26px}
+.toolbar{display:flex;justify-content:flex-end;margin-bottom:12px}
+#enunciado{background:#f9fafb;border:1px solid var(--line);border-radius:12px;padding:16px 18px;font-size:1.05rem;min-height:90px}
+.row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.row input{flex:1 1 260px;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit;color:var(--ink);background:#fff}
+.row input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+.btn{font-family:inherit;font-size:.95rem;font-weight:600;border-radius:10px;padding:10px 16px;cursor:pointer;border:1.5px solid transparent;transition:filter .15s,background .15s}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-ghost{background:transparent;color:var(--brand);border-color:var(--brand)}
+.btn-ghost:hover{background:#eef2ff}
+.btn-soft{background:#eef2ff;color:var(--brand)}
+.btn-soft:hover{background:#e0e7ff}
+.feedback{display:none;margin-top:14px;padding:12px 14px;border-radius:10px;border:1px solid}
+.feedback.ok{display:block;background:var(--okbg);border-color:var(--ok);color:#065f46}
+.feedback.err{display:block;background:var(--errbg);border-color:var(--err);color:#991b1b}
+.feedback code{background:rgba(0,0,0,.06);padding:1px 6px;border-radius:5px}
+.panel{display:none;margin-top:12px;padding:12px 14px;border-radius:10px;border:1px solid}
+.panel.visible{display:block}
+.panel.pista{background:var(--warnbg);border-color:#fcd34d;color:var(--warn)}
+.panel.explicacion{background:#f5f3ff;border-color:#c4b5fd;color:#4c1d95}
+.ptitle{display:block;font-weight:600;margin-bottom:4px}
+.marcador{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:.95rem}
+.marcador b{color:var(--ink)}
+.marcador .leyenda{margin-left:auto}
+.kbd{display:inline-block;padding:1px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:#fff;font-size:.8rem;color:var(--ink)}
+mjx-container{max-width:100%;overflow-x:auto;overflow-y:hidden}
+footer{text-align:center;color:var(--muted);font-size:.85rem;margin-top:16px}
+@media (max-width:560px){
+  .head{padding:18px 18px}
+  .head h1{font-size:1.3rem}
+  .body{padding:16px 16px 20px}
+  .row{flex-direction:column}
+  .row .btn{width:100%}
+  .marcador .leyenda{margin-left:0;width:100%}
+}
+</style>
+<script>
+window.MathJax = {
+  tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$']]},
+  svg:{fontCache:'global'},
+  options:{skipHtmlTags:['script','noscript','style','textarea','pre','code']}
+};
+</script>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="head">
+      <h1>Generador infinito de ejercicios</h1>
+      <p>Materia: Cálculo vectorial · Tema: Repaso de campos vectoriales, integrales y teoremas de Green, Stokes y Divergencia</p>
+    </div>
+    <div class="body">
+      <div class="toolbar">
+        <button type="button" id="btnNuevo" class="btn btn-ghost">Nuevo ejercicio</button>
+      </div>
+      <div id="enunciado"></div>
+      <div class="row">
+        <input type="text" id="respuesta" placeholder="Usa ^ para potencias y / para fracciones…" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button type="button" id="btnVerificar" class="btn btn-primary">Verificar</button>
+        <button type="button" id="btnPista" class="btn btn-soft">Pista</button>
+        <button type="button" id="btnExplicacion" class="btn btn-soft">Explicación</button>
+      </div>
+      <div id="feedback" class="feedback"></div>
+      <div id="pistaBox" class="panel pista"></div>
+      <div id="explicacionBox" class="panel explicacion"></div>
+      <div class="marcador">
+        <span>Aciertos: <b id="mArc">0</b></span>
+        <span>Intentos: <b id="mInt">0</b></span>
+        <span class="leyenda"><span class="kbd">Enter</span> = verificar · <span class="kbd">N</span> = nuevo</span>
+      </div>
+    </div>
+  </div>
+  <footer>Generador aleatorio educativo · Cálculo vectorial · Repaso del tercer parcial: campos vectoriales, integrales y teoremas de Green, Stokes y Divergencia</footer>
+</div>
+ 
+<script>
+/* ===================== UTILIDADES ===================== */
+function escaparHTML(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+ 
+function normalizar(valor){
+  var s = String(valor).toLowerCase();
+  s = s.replace(/\$/g,'');
+  s = s.replace(/\\left|\\right/g,'');
+  s = s.replace(/\\[,;]|\\quad/g,'');
+  s = s.replace(/\s+/g,'');
+  s = s.replace(/·/g,'');
+  s = s.replace(/[−–]/g,'-');
+  s = s.replace(/\\dfrac/g,'\\frac');
+  s = s.replace(/\\cdot|\\times/g,'*');
+  s = s.replace(/\\div/g,'/');
+  s = s.replace(/\\(sin|cos|tan|ln)/g,'$1');
+  s = s.replace(/\\pi/g,'pi').replace(/π/g,'pi');
+  s = s.replace(/[²³⁴⁵⁶]/g,function(c){
+    var m = {'²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6'};
+    return '^' + m[c];
+  });
+  var previo;
+  do {
+    previo = s;
+    s = s.replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g,'(($1)/($2))');
+  } while (s !== previo);
+  s = s.replace(/[{}]/g,'');
+  s = s.replace(/\\/g,'');
+  s = s.replace(/\^\(([^()]*)\)/g,'^$1');
+  return s;
+}
+ 
+function sinParentesis(s){
+  return String(s).replace(/[()]/g,'');
+}
+ 
+/* Ordena los factores de un monomio: 3x^2yz y 3zyx^2 son iguales */
+function monomio(t){
+  var m = t.match(/^(\d+(?:\.\d+)?)?((?:[a-z](?:\^\d+)?)*)$/);
+  if (!m || m[2] === '') { return t; }
+  var vars = {}, re = /([a-z])(?:\^(\d+))?/g, x;
+  while ((x = re.exec(m[2])) !== null) {
+    vars[x[1]] = (vars[x[1]] || 0) + (x[2] ? parseInt(x[2], 10) : 1);
+  }
+  var ks = Object.keys(vars).sort();
+  return (m[1] || '') + ks.map(function(k){ return k + (vars[k] > 1 ? '^' + vars[k] : ''); }).join('');
+}
+ 
+/* Forma canónica: sin paréntesis ni *, monomios ordenados y sumandos ordenados */
+function canon(s){
+  var t = sinParentesis(s).replace(/\*/g,'').replace(/-/g,'+-');
+  var partes = t.split('+').filter(function(p){ return p !== ''; }).map(function(p){
+    var neg = p.charAt(0) === '-';
+    return (neg ? '-' : '') + monomio(neg ? p.slice(1) : p);
+  });
+  partes.sort();
+  return partes.join('+');
+}
+ 
+function iguales(n, na){
+  return n === na || sinParentesis(n) === sinParentesis(na) || canon(n) === canon(na);
+}
+ 
+function coincideTexto(entrada, acepta){
+  var n = normalizar(entrada), i;
+  if (n === '') { return false; }
+  for (i = 0; i < acepta.length; i++) {
+    if (iguales(n, normalizar(acepta[i]))) { return true; }
+  }
+  return false;
+}
+ 
+/* Como coincideTexto, pero ignora el sufijo +C / -C (integrales indefinidas) */
+function coincideAntiderivada(entrada, acepta){
+  function quitarC(x){ return normalizar(x).replace(/[+-]c$/,''); }
+  var n = quitarC(entrada), i;
+  if (n === '') { return false; }
+  for (i = 0; i < acepta.length; i++) {
+    if (iguales(n, quitarC(acepta[i]))) { return true; }
+  }
+  return false;
+}
+ 
+function aNumero(entrada){
+  var s = String(entrada).replace(/\$/g,'').replace(/[{}]/g,'').replace(/\s+/g,'').replace(/[−–]/g,'-').replace(/,/g,'.');
+  var m = s.match(/^(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/);
+  if (m) {
+    var d = parseFloat(m[2]);
+    if (d === 0) { return NaN; }
+    return parseFloat(m[1]) / d;
+  }
+  if (/^-?\d+(?:\.\d+)?$/.test(s)) { return parseFloat(s); }
+  return NaN;
+}
+ 
+function tiposet(nodo, intento){
+  intento = intento || 0;
+  if (window.MathJax && window.MathJax.typesetPromise) {
+    window.MathJax.typesetPromise([nodo]).catch(function(){});
+  } else if (intento < 40) {
+    setTimeout(function(){ tiposet(nodo, intento + 1); }, 200);
+  }
+}
+ 
+/* ===================== GENERADOR ===================== */
+function rnd(a, b){ return a + Math.floor(Math.random() * (b - a + 1)); }
+function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+function term(c, v){ return c === 1 ? v : c + v; }
+function pw(v, e){ return e === 1 ? v : v + '^{' + e + '}'; }
+function gcd(a, b){
+  a = Math.abs(a); b = Math.abs(b);
+  while (b) { var t = b; b = a % b; a = t; }
+  return a;
+}
+function fraccion(n, d){
+  var g = gcd(n, d);
+  n = n / g; d = d / g;
+  if (d < 0) { n = -n; d = -d; }
+  return {n:n, d:d};
+}
+function fr(n, d){ return fraccion(n, d === undefined ? 1 : d); }
+function fadd(a, b){ return fraccion(a.n * b.d + b.n * a.d, a.d * b.d); }
+function fsub(a, b){ return fraccion(a.n * b.d - b.n * a.d, a.d * b.d); }
+function fmul(a, b){ return fraccion(a.n * b.n, a.d * b.d); }
+function fdiv(a, b){ return fraccion(a.n * b.d, a.d * b.n); }
+function fracTxt(f){ return f.d === 1 ? String(f.n) : f.n + '/' + f.d; }
+function fracTeX(f){
+  if (f.d === 1) { return String(f.n); }
+  return (f.n < 0 ? '-' : '') + '\\frac{' + Math.abs(f.n) + '}{' + f.d + '}';
+}
+function fval(f){ return f.n / f.d; }
+ 
+/* Resultado de la forma k*pi con k fraccionario */
+function conPiF(f){
+  if (f.n === 0) { return {acepta:['0'], tex:'0'}; }
+  var pre = f.n === 1 ? 'pi' : f.n + 'pi';
+  if (f.d === 1) {
+    return {acepta:[pre, f.n + '*pi', f.n + 'π'], tex: f.n === 1 ? '\\pi' : f.n + '\\pi'};
+  }
+  return {
+    acepta:[pre + '/' + f.d, f.n + '/' + f.d + 'pi'],
+    tex: f.n === 1 ? '\\frac{\\pi}{' + f.d + '}' : '\\frac{' + f.n + '\\pi}{' + f.d + '}'
+  };
+}
+ 
+var PI_NOTA = 'Si el resultado es $k\\pi$, escribe solo el coeficiente $k$ (puede ser fracción, como 7/3) o bien algo como 5pi.';
+ 
+function vecIJ(P, Q){
+  return '\\vec{F}(x,y)=\\left(' + P + '\\right)\\mathbf{i}+\\left(' + Q + '\\right)\\mathbf{j}';
+}
+ 
+/* ---- Ejercicio 1a. Campo conservativo y potencial ---- */
+function vPotencial(){
+  var t = rnd(1,3), a = rnd(1,3), b = rnd(1,3);
+  var P, Q, py, f, fx, fy, g, pt, num, tex, ac, k, y0;
+  if (t === 1) {
+    k = rnd(2,3);
+    P  = term(a,'e^{x}' + pw('y',k)) + '+' + term(b,'y');
+    Q  = term(a*k,'e^{x}' + pw('y',k-1)) + '+' + term(b,'x');
+    py = term(a*k,'e^{x}' + pw('y',k-1)) + '+' + b;
+    fx = term(a,'e^{x}' + pw('y',k)) + '+' + term(b,'xy');
+    fy = term(a*k,'e^{x}' + pw('y',k-1)) + '+' + term(b,'x');
+    g  = '0';
+    f  = fx;
+    pt = '(1,1)';
+    num = a * Math.E + b;
+    tex = term(a,'e') + '+' + b;
+    ac  = [(a === 1 ? 'e' : a + 'e') + '+' + b];
+  } else if (t === 2) {
+    P  = term(2*a,'xy');
+    Q  = term(a,'x^{2}') + '+' + term(3*b,'y^{2}');
+    py = term(2*a,'x');
+    fx = term(a,'x^{2}y');
+    fy = term(a,'x^{2}');
+    g  = term(3*b,'y^{2}');
+    f  = fx + '+' + term(b,'y^{3}');
+    pt = '(2,1)';
+    num = 4*a + b; tex = String(num); ac = [tex];
+  } else {
+    y0 = rnd(1,2);
+    P  = term(a,'y\\cos x');
+    Q  = term(a,'\\sin x') + '+' + term(2*b,'y');
+    py = term(a,'\\cos x');
+    fx = term(a,'y\\sin x');
+    fy = term(a,'\\sin x');
+    g  = term(2*b,'y');
+    f  = fx + '+' + term(b,'y^{2}');
+    pt = '\\left(\\frac{\\pi}{2},' + y0 + '\\right)';
+    num = a*y0 + b*y0*y0; tex = String(num); ac = [tex];
+  }
+  return {
+    tipo:'numerica',
+    problema:'Lucía, ingeniera en diseño de sensores, modela una fuerza sobre una placa con el campo vectorial $' + vecIJ(P,Q) + '$. Verifica que $\\vec{F}$ es conservativo y calcula el potencial $f$ que satisface $\\nabla f=\\vec{F}$ con $f(0,0)=0$. Escribe el valor de $f' + pt + '$' + (t === 1 ? ' (puedes dejarlo con $e$, por ejemplo 4e+7, o dar un decimal)' : '') + '.',
+    solucion:'El potencial es $f(x,y)=' + f + '$ y $f' + pt + '=' + tex + '$.',
+    respuestaLaTeX:tex,
+    acepta:ac,
+    respuesta:num,
+    tolerancia:0.001,
+    pista:'Comprueba que $\\frac{\\partial P}{\\partial y}=\\frac{\\partial Q}{\\partial x}$. Después integra $P$ respecto de $x$, suma una función $g(y)$ y determínala derivando respecto de $y$ para igualar con $Q$.',
+    explicacion:'Paso 1. $\\frac{\\partial P}{\\partial y}=' + py + '$ y $\\frac{\\partial Q}{\\partial x}=' + py + '$: coinciden, así que $\\vec{F}$ es conservativo.<br>Paso 2. Integra $P$ respecto de $x$: $f(x,y)=' + fx + '+g(y)$.<br>Paso 3. Deriva respecto de $y$: $f_y=' + fy + '+g^{\\prime}(y)$. Igualando con $Q$ resulta $g^{\\prime}(y)=' + g + '$.<br>Paso 4. Entonces $f(x,y)=' + f + '+C$, y con $f(0,0)=0$ se obtiene $C=0$.<br>Paso 5. Evalúa: $f' + pt + '=' + tex + '$.'
+  };
+}
+ 
+/* ---- Ejercicio 1b. Prueba de campo conservativo (simbólica) ---- */
+function vConservativo(){
+  var campos = [
+    {P:'e^{x}y^{3}+y', Q:'3e^{x}y^{2}+x', qx:'3e^{x}y^{2}+1', py:'3e^{x}y^{2}+1', d:'0', ac:'0'},
+    {P:'2xy+3', Q:'x^{2}+4y', qx:'2x', py:'2x', d:'0', ac:'0'},
+    {P:'3x^{2}y', Q:'x^{3}+y^{2}', qx:'3x^{2}', py:'3x^{2}', d:'0', ac:'0'},
+    {P:'y^{3}+x', Q:'3xy^{2}+y', qx:'3y^{2}', py:'3y^{2}', d:'0', ac:'0'},
+    {P:'xy^{2}', Q:'x^{2}y+x', qx:'2xy+1', py:'2xy', d:'1', ac:'1'},
+    {P:'y^{2}', Q:'x^{2}', qx:'2x', py:'2y', d:'2x-2y', ac:'2x-2y'},
+    {P:'x^{2}y', Q:'xy^{2}', qx:'y^{2}', py:'x^{2}', d:'y^{2}-x^{2}', ac:'y^2-x^2'},
+    {P:'xy', Q:'x^{2}', qx:'2x', py:'x', d:'x', ac:'x'},
+    {P:'-y^{2}', Q:'xy', qx:'y', py:'-2y', d:'3y', ac:'3y'}
+  ];
+  var c = pick(campos);
+  var concl = c.ac === '0'
+    ? 'Como la diferencia es 0, el campo SÍ es conservativo (en todo el plano, que es simplemente conexo).'
+    : 'Como la diferencia no es 0, el campo NO es conservativo y no existe un potencial $f$ con $\\nabla f=\\vec{F}$.';
+  return {
+    tipo:'simbolica',
+    problema:'Paola, estudiante de Ingeniería en Innovación y Diseño, analiza el campo plano $' + vecIJ(c.P, c.Q) + '$. Para verificar si $\\vec{F}$ es conservativo, calcula $\\frac{\\partial Q}{\\partial x}-\\frac{\\partial P}{\\partial y}$ (si es 0, el campo es conservativo). Escribe el resultado en términos de $x$ e $y$ (si es constante, escribe el número).',
+    solucion:'La diferencia es $' + c.d + '$. ' + concl,
+    respuestaLaTeX:c.d,
+    acepta:[c.ac],
+    pista:'Identifica $P$ (coeficiente de $\\mathbf{i}$) y $Q$ (coeficiente de $\\mathbf{j}$). Deriva $Q$ respecto de $x$ y $P$ respecto de $y$, y resta en ese orden.',
+    explicacion:'Paso 1. $P=' + c.P + '$ y $Q=' + c.Q + '$.<br>Paso 2. $\\frac{\\partial Q}{\\partial x}=' + c.qx + '$.<br>Paso 3. $\\frac{\\partial P}{\\partial y}=' + c.py + '$.<br>Paso 4. Resta: $' + c.qx + '-\\left(' + c.py + '\\right)=' + c.d + '$. ' + concl
+  };
+}
+ 
+/* ---- Ejercicio 2. Rotacional y divergencia ---- */
+function vRotDiv(){
+  var campos = [
+    {F:'xy^{2}z^{3},\\ x^{3}yz^{2},\\ x^{2}y^{3}z',
+     Px:'y^2z^3', Qy:'x^3z^2', Rz:'x^2y^3', Ry:'3x^2y^2z', Qz:'2x^3yz', Pz:'3xy^2z^2', Rx:'2xy^3z', Qx:'3x^2yz^2', Py:'2xyz^3',
+     div:'y^2z^3+x^3z^2+x^2y^3', c:['3x^2y^2z-2x^3yz','3xy^2z^2-2xy^3z','3x^2yz^2-2xyz^3']},
+    {F:'x^{2}y,\\ y^{2}z,\\ z^{2}x',
+     Px:'2xy', Qy:'2yz', Rz:'2xz', Ry:'0', Qz:'y^2', Pz:'0', Rx:'z^2', Qx:'0', Py:'x^2',
+     div:'2xy+2yz+2xz', c:['-y^2','-z^2','-x^2']},
+    {F:'yz,\\ xz,\\ xy',
+     Px:'0', Qy:'0', Rz:'0', Ry:'x', Qz:'x', Pz:'y', Rx:'y', Qx:'z', Py:'z',
+     div:'0', c:['0','0','0']},
+    {F:'x^{2}z,\\ xy^{2},\\ yz^{2}',
+     Px:'2xz', Qy:'2xy', Rz:'2yz', Ry:'z^2', Qz:'0', Pz:'x^2', Rx:'0', Qx:'y^2', Py:'0',
+     div:'2xz+2xy+2yz', c:['z^2','x^2','y^2']},
+    {F:'x^{3}yz,\\ xy^{3}z,\\ xyz^{3}',
+     Px:'3x^2yz', Qy:'3xy^2z', Rz:'3xyz^2', Ry:'xz^3', Qz:'xy^3', Pz:'x^3y', Rx:'yz^3', Qx:'y^3z', Py:'x^3z',
+     div:'3x^2yz+3xy^2z+3xyz^2', c:['xz^3-xy^3','x^3y-yz^3','y^3z-x^3z']}
+  ];
+  var f = pick(campos), q = rnd(0,3);
+  var nombres = ['la divergencia $\\nabla\\cdot\\vec{F}$',
+                 'la componente en $\\hat{\\imath}$ del rotacional $\\nabla\\times\\vec{F}$',
+                 'la componente en $\\hat{\\jmath}$ del rotacional $\\nabla\\times\\vec{F}$',
+                 'la componente en $\\hat{k}$ del rotacional $\\nabla\\times\\vec{F}$'];
+  var formas = ['\\frac{\\partial P}{\\partial x}+\\frac{\\partial Q}{\\partial y}+\\frac{\\partial R}{\\partial z}',
+                '\\frac{\\partial R}{\\partial y}-\\frac{\\partial Q}{\\partial z}',
+                '\\frac{\\partial P}{\\partial z}-\\frac{\\partial R}{\\partial x}',
+                '\\frac{\\partial Q}{\\partial x}-\\frac{\\partial P}{\\partial y}'];
+  var sust = [f.Px + '+' + f.Qy + '+' + f.Rz,
+              f.Ry + '-\\left(' + f.Qz + '\\right)',
+              f.Pz + '-\\left(' + f.Rx + '\\right)',
+              f.Qx + '-\\left(' + f.Py + '\\right)'];
+  var res = q === 0 ? f.div : f.c[q-1];
+  var comps = f.F.split(',\\ ');
+  return {
+    tipo:'simbolica',
+    problema:'Brenda, ingeniera en diseño de productos, estudia el flujo de aire en un conducto de ventilación con el campo $\\vec{F}(x,y,z)=\\langle ' + f.F + '\\rangle$. Calcula ' + nombres[q] + '. Escribe el resultado desarrollado en términos de $x$, $y$, $z$ (si es cero, escribe 0).',
+    solucion:'El resultado es $' + res + '$.',
+    respuestaLaTeX:res,
+    acepta:[res],
+    pista:'Con $\\vec{F}=\\langle P,Q,R\\rangle$, ' + (q === 0 ? 'la divergencia es' : 'la componente pedida del rotacional es') + ' $' + formas[q] + '$. Deriva con cuidado, tratando las otras variables como constantes.',
+    explicacion:'Paso 1. Identifica $P=' + comps[0] + '$, $Q=' + comps[1] + '$ y $R=' + comps[2] + '$.<br>Paso 2. Se necesita $' + formas[q] + '$.<br>Paso 3. Sustituye las derivadas parciales: $' + sust[q] + '$.<br>Paso 4. Simplifica: $' + res + '$.<br>Para referencia: $\\nabla\\cdot\\vec{F}=' + f.div + '$ y $\\nabla\\times\\vec{F}=\\langle ' + f.c[0] + ',\\ ' + f.c[1] + ',\\ ' + f.c[2] + '\\rangle$.'
+  };
+}
+ 
+/* ---- Ejercicio 3a. Integral de línea (campo conservativo) ---- */
+function vLineaConservativa(){
+  var r = rnd(1,3), p = rnd(1,4), q = rnd(1,4);
+  var campos = [
+    {d:'x^{2}\\,dx+y^{2}\\,dy', f:'\\frac{x^{3}+y^{3}}{3}', pot:function(x,y){ return fr(x*x*x + y*y*y, 3); }},
+    {d:'y\\,dx+x\\,dy', f:'xy', pot:function(x,y){ return fr(x*y); }},
+    {d:'2xy\\,dx+x^{2}\\,dy', f:'x^{2}y', pot:function(x,y){ return fr(x*x*y); }},
+    {d:'y^{2}\\,dx+2xy\\,dy', f:'xy^{2}', pot:function(x,y){ return fr(x*y*y); }},
+    {d:'(3x^{2}+y)\\,dx+(x+2y)\\,dy', f:'x^{3}+xy+y^{2}', pot:function(x,y){ return fr(x*x*x + x*y + y*y); }}
+  ];
+  var c = pick(campos);
+  var fin = c.pot(p, q), ini = c.pot(r, 0), res = fsub(fin, ini);
+  return {
+    tipo:'numerica',
+    problema:'Itzel, diseñadora de mobiliario, necesita el trabajo de una fuerza a lo largo de un riel formado por dos tramos. Evalúa la integral de línea $\\int_C ' + c.d + '$, donde $C$ es la curva que consiste en el arco de circunferencia $x^2+y^2=' + (r*r) + '$ desde $(' + r + ',0)$ hasta $(0,' + r + ')$, seguido del segmento de recta desde $(0,' + r + ')$ hasta $(' + p + ',' + q + ')$.',
+    solucion:'El campo es conservativo con potencial $f=' + c.f + '$, y la integral vale $f(' + p + ',' + q + ')-f(' + r + ',0)=' + fracTeX(res) + '$.',
+    respuestaLaTeX:fracTeX(res),
+    acepta:[fracTxt(res)],
+    respuesta:fval(res),
+    tolerancia:0.001,
+    pista:'Compara $\\frac{\\partial P}{\\partial y}$ con $\\frac{\\partial Q}{\\partial x}$. Si coinciden, el campo es conservativo: busca un potencial $f$ y el resultado depende solo del punto inicial y del final, no de la forma de la curva.',
+    explicacion:'Paso 1. Con $\\vec{F}=\\langle P,Q\\rangle$ se verifica $\\frac{\\partial P}{\\partial y}=\\frac{\\partial Q}{\\partial x}$, así que $\\vec{F}$ es conservativo.<br>Paso 2. Un potencial es $f(x,y)=' + c.f + '$.<br>Paso 3. Por el teorema fundamental de las integrales de línea, $\\int_C\\vec{F}\\cdot d\\vec{r}=f(\\text{final})-f(\\text{inicial})$. El inicio es $(' + r + ',0)$ y el final es $(' + p + ',' + q + ')$.<br>Paso 4. $f(' + p + ',' + q + ')=' + fracTeX(fin) + '$ y $f(' + r + ',0)=' + fracTeX(ini) + '$, de modo que el resultado es $' + fracTeX(res) + '$.'
+  };
+}
+ 
+/* ---- Ejercicio 3b. Integral de línea (campo no conservativo, con parametrización) ---- */
+function vLineaRotacional(){
+  var r = rnd(1,3), p = rnd(1,4), q = rnd(1,4), s = rnd(1,3);
+  var kf = fr(s * r * r, 2);
+  var m = s * p * r;
+  var piTeX = kf.d === 1 ? (kf.n === 1 ? '\\pi' : kf.n + '\\pi') : (kf.n === 1 ? '\\frac{\\pi}{' + kf.d + '}' : '\\frac{' + kf.n + '\\pi}{' + kf.d + '}');
+  var piTxt = kf.d === 1 ? (kf.n === 1 ? 'pi' : kf.n + 'pi') : (kf.n === 1 ? 'pi/' + kf.d : kf.n + 'pi/' + kf.d);
+  var ac = [piTxt + '-' + m];
+  if (kf.d !== 1) { ac.push(kf.n + '/' + kf.d + 'pi-' + m); }
+  var num = s * (r * r * Math.PI / 2 - p * r);
+  var d = '-' + term(s,'y') + '\\,dx+' + term(s,'x') + '\\,dy';
+  return {
+    tipo:'numerica',
+    problema:'Mariana, estudiante de Ingeniería en Innovación y Diseño, evalúa la circulación de un flujo a lo largo de un riel. Calcula la integral de línea $\\int_C ' + d + '$, donde $C$ es la curva que consiste en el arco de circunferencia $x^2+y^2=' + (r*r) + '$ desde $(' + r + ',0)$ hasta $(0,' + r + ')$, seguido del segmento de recta desde $(0,' + r + ')$ hasta $(' + p + ',' + q + ')$. Escribe el resultado exacto (con pi, por ejemplo 3pi-5) o un decimal con tres cifras.',
+    solucion:'La integral vale $' + piTeX + '-' + m + '\\approx ' + num.toFixed(4) + '$.',
+    respuestaLaTeX:piTeX + '-' + m,
+    acepta:ac,
+    respuesta:num,
+    tolerancia:0.001,
+    pista:'Este campo NO es conservativo ($\\frac{\\partial Q}{\\partial x}\\ne\\frac{\\partial P}{\\partial y}$), así que debes parametrizar cada tramo: el arco con $x=' + r + '\\cos t$, $y=' + r + '\\sin t$, y el segmento con una recta que dependa de $t\\in[0,1]$. Suma las dos integrales.',
+    explicacion:'Paso 1. Arco $C_1$: $x=' + r + '\\cos t$, $y=' + r + '\\sin t$, $0\\le t\\le\\frac{\\pi}{2}$. Entonces $-y\\,dx+x\\,dy=' + (r*r) + '\\,dt$ y la integral sobre $C_1$ es $' + s + '\\cdot' + (r*r) + '\\cdot\\frac{\\pi}{2}=' + piTeX + '$.<br>Paso 2. Segmento $C_2$: $x=' + p + 't$, $y=' + r + '+(' + q + '-' + r + ')t$, $0\\le t\\le1$, con $dx=' + p + '\\,dt$ y $dy=(' + q + '-' + r + ')\\,dt$.<br>Paso 3. Sobre $C_2$: $-y\\,dx+x\\,dy=-' + (p*r) + '\\,dt$ (los términos en $t$ se cancelan), así que su integral es $' + s + '\\cdot(-' + (p*r) + ')=-' + m + '$.<br>Paso 4. Suma: $' + piTeX + '-' + m + '\\approx ' + num.toFixed(4) + '$.'
+  };
+}
+ 
+/* ---- Ejercicio 4. Área de superficie esférica entre planos ---- */
+function vAreaEsfera(){
+  var R = rnd(2,5), tipo = rnd(0,1), a, b, txt;
+  if (tipo === 0) {
+    a = rnd(-(R-1), R-1); b = R;
+    txt = 'la parte de la superficie que está por encima del plano $z=' + a + '$';
+  } else {
+    a = rnd(-(R-1), R-2); b = rnd(a+1, R-1);
+    txt = 'la parte de la superficie comprendida entre los planos $z=' + a + '$ y $z=' + b + '$';
+  }
+  var k = 2 * R * (b - a), p = conPiF(fr(k));
+  return {
+    tipo:'numerica',
+    problema:'Daniela diseña un domo esférico de ecuación $x^2+y^2+z^2=' + (R*R) + '$ (en metros) y necesita cotizar el recubrimiento de ' + txt + '. Calcula el área de esa superficie. ' + PI_NOTA,
+    solucion:'El área es $2\\pi\\cdot' + R + '\\cdot(' + b + '-(' + a + '))=' + p.tex + '$.',
+    respuestaLaTeX:p.tex,
+    acepta:p.acepta,
+    respuesta:k,
+    tolerancia:0.001,
+    pista:'Parametriza la esfera con coordenadas esféricas: $dS=R^2\\sin\\varphi\\,d\\varphi\\,d\\theta$ y $z=R\\cos\\varphi$. Observa qué le pasa a $dS$ cuando lo escribes en términos de $dz$.',
+    explicacion:'Paso 1. Con $\\vec{r}(\\varphi,\\theta)=\\langle R\\sin\\varphi\\cos\\theta,\\ R\\sin\\varphi\\sin\\theta,\\ R\\cos\\varphi\\rangle$ y $R=' + R + '$, $\\|\\vec{r}_\\varphi\\times\\vec{r}_\\theta\\|=R^2\\sin\\varphi$.<br>Paso 2. Como $z=R\\cos\\varphi$, $dz=-R\\sin\\varphi\\,d\\varphi$, así que $dS=R\\,dz\\,d\\theta$.<br>Paso 3. $A=\\int_0^{2\\pi}\\int_{' + a + '}^{' + b + '}R\\,dz\\,d\\theta=2\\pi R(' + b + '-(' + a + '))$.<br>Paso 4. Con $R=' + R + '$: $A=2\\pi\\cdot' + R + '\\cdot' + (b-a) + '=' + p.tex + '$.'
+  };
+}
+ 
+/* ---- Ejercicio 5. Masa y centro de masa de una lámina triangular ---- */
+function comb(cs, vs){
+  var p = [], i;
+  for (i = 0; i < cs.length; i++) {
+    if (cs[i] !== 0) { p.push(cs[i] + '\\cdot' + fracTeX(vs[i])); }
+  }
+  return p.join('+');
+}
+function combVal(cs, vs){
+  var t = fr(0), i;
+  for (i = 0; i < cs.length; i++) { t = fadd(t, fmul(fr(cs[i]), vs[i])); }
+  return t;
+}
+ 
+function vLamina(){
+  var tuplas = [[3,5,2,6,2],[3,6,1,1,0],[1,2,4,4,4],[3,2,3,1,3],[3,6,3,2,2],[6,3,3,1,1],[2,1,5,2,2],[4,3,3,0,3],[3,2,3,4,3],[6,4,4,0,1],[6,5,3,1,0],[2,6,3,0,2],[5,6,1,0,2]];
+  var u = pick(tuplas), m = u[0], n = u[1], a = u[2], b = u[3], c = u[4];
+  var A = fr(m*n, 2), Ix = fr(m*m*n, 6), Iy = fr(m*n*n, 6);
+  var Ixx = fr(m*m*m*n, 12), Iyy = fr(m*n*n*n, 12), Ixy = fr(m*m*n*n, 24);
+  var cs = [a, b, c];
+  var M  = combVal(cs, [A, Ix, Iy]);
+  var My = combVal(cs, [Ix, Ixx, Ixy]);
+  var Mx = combVal(cs, [Iy, Ixy, Iyy]);
+  var xb = fdiv(My, M), yb = fdiv(Mx, M);
+  var opciones = ['M'];
+  if (xb.d <= 8) { opciones.push('x'); }
+  if (yb.d <= 8) { opciones.push('y'); }
+  var que = pick(opciones);
+  var dens = String(a) + (b ? '+' + term(b,'x') : '') + (c ? '+' + term(c,'y') : '');
+  var pedido, res, pista, exp;
+  var base = 'Paso 1. La región $D$ es el triángulo $0\\le x\\le ' + m + '$, $0\\le y\\le ' + n + '-\\frac{' + n + '}{' + m + '}x$ (la recta pasa por $(' + m + ',0)$ y $(0,' + n + ')$).<br>';
+  if (que === 'M') {
+    pedido = 'la masa $M$ de la lámina';
+    res = M;
+    pista = 'La masa es $M=\\iint_D\\rho(x,y)\\,dA$. Describe $D$ con integrales iteradas: $x$ de $0$ a $' + m + '$ y $y$ de $0$ a la recta que une $(' + m + ',0)$ con $(0,' + n + ')$.';
+    exp = base + 'Paso 2. $M=\\iint_D\\rho\\,dA=\\iint_D(' + dens + ')\\,dA$.<br>Paso 3. Con integrales iteradas: $\\iint_D dA=' + fracTeX(A) + '$, $\\iint_D x\\,dA=' + fracTeX(Ix) + '$, $\\iint_D y\\,dA=' + fracTeX(Iy) + '$.<br>Paso 4. $M=' + comb(cs,[A,Ix,Iy]) + '=' + fracTeX(M) + '$.';
+  } else if (que === 'x') {
+    pedido = 'la coordenada $\\bar{x}$ del centro de masa';
+    res = xb;
+    pista = 'Necesitas $M=\\iint_D\\rho\\,dA$ y el momento $M_y=\\iint_D x\\,\\rho\\,dA$. Entonces $\\bar{x}=\\frac{M_y}{M}$.';
+    exp = base + 'Paso 2. $M=' + comb(cs,[A,Ix,Iy]) + '=' + fracTeX(M) + '$, usando $\\iint_D dA=' + fracTeX(A) + '$, $\\iint_D x\\,dA=' + fracTeX(Ix) + '$ y $\\iint_D y\\,dA=' + fracTeX(Iy) + '$.<br>Paso 3. $M_y=\\iint_D x\\rho\\,dA$, con $\\iint_D x\\,dA=' + fracTeX(Ix) + '$, $\\iint_D x^2\\,dA=' + fracTeX(Ixx) + '$ y $\\iint_D xy\\,dA=' + fracTeX(Ixy) + '$: $M_y=' + comb(cs,[Ix,Ixx,Ixy]) + '=' + fracTeX(My) + '$.<br>Paso 4. $\\bar{x}=\\frac{M_y}{M}=' + fracTeX(xb) + '$.';
+  } else {
+    pedido = 'la coordenada $\\bar{y}$ del centro de masa';
+    res = yb;
+    pista = 'Necesitas $M=\\iint_D\\rho\\,dA$ y el momento $M_x=\\iint_D y\\,\\rho\\,dA$. Entonces $\\bar{y}=\\frac{M_x}{M}$.';
+    exp = base + 'Paso 2. $M=' + comb(cs,[A,Ix,Iy]) + '=' + fracTeX(M) + '$, usando $\\iint_D dA=' + fracTeX(A) + '$, $\\iint_D x\\,dA=' + fracTeX(Ix) + '$ y $\\iint_D y\\,dA=' + fracTeX(Iy) + '$.<br>Paso 3. $M_x=\\iint_D y\\rho\\,dA$, con $\\iint_D y\\,dA=' + fracTeX(Iy) + '$, $\\iint_D xy\\,dA=' + fracTeX(Ixy) + '$ y $\\iint_D y^2\\,dA=' + fracTeX(Iyy) + '$: $M_x=' + comb(cs,[Iy,Ixy,Iyy]) + '=' + fracTeX(Mx) + '$.<br>Paso 4. $\\bar{y}=\\frac{M_x}{M}=' + fracTeX(yb) + '$.';
+  }
+  return {
+    tipo:'numerica',
+    problema:'Sofía, ingeniera en innovación y diseño, fabrica una pieza triangular de lámina con vértices $(0,0)$, $(' + m + ',0)$ y $(0,' + n + ')$. La densidad no es uniforme: $\\rho(x,y)=' + dens + '$. Calcula ' + pedido + '. Escribe el resultado como número entero, fracción (por ejemplo 7/3) o decimal.',
+    solucion:'El resultado es $' + fracTeX(res) + '$.',
+    respuestaLaTeX:fracTeX(res),
+    acepta:[fracTxt(res)],
+    respuesta:fval(res),
+    tolerancia:0.001,
+    pista:pista,
+    explicacion:exp
+  };
+}
+ 
+/* ---- Ejercicio 6. Teorema de Green en un triángulo ---- */
+function vGreenTriangulo(){
+  var campos = [
+    {P:'y\\cos x-xy\\sin x', Q:'xy+x\\cos x', Qx:'y+\\cos x-x\\sin x', Py:'\\cos x-x\\sin x', ig:'y',
+     I:function(m,n){ return fr(m*n*n, 6); }},
+    {P:'-x^{2}y', Q:'xy^{2}', Qx:'y^{2}', Py:'-x^{2}', ig:'x^{2}+y^{2}',
+     I:function(m,n){ return fr(m*m*m*n + m*n*n*n, 12); }},
+    {P:'y^{2}', Q:'x', Qx:'1', Py:'2y', ig:'1-2y',
+     I:function(m,n){ return fsub(fr(m*n, 2), fr(m*n*n, 3)); }},
+    {P:'xy^{2}', Q:'x^{2}y+x', Qx:'2xy+1', Py:'2xy', ig:'1',
+     I:function(m,n){ return fr(m*n, 2); }}
+  ];
+  var c = pick(campos), m = rnd(1,5), n = rnd(1,5), horario = rnd(0,1) === 0;
+  var I = c.I(m, n);
+  var res = horario ? fr(-I.n, I.d) : I;
+  var recorrido = horario
+    ? '$(0,0)\\to(0,' + n + ')\\to(' + m + ',0)\\to(0,0)$'
+    : '$(0,0)\\to(' + m + ',0)\\to(0,' + n + ')\\to(0,0)$';
+  return {
+    tipo:'numerica',
+    problema:'Valentina modela con $\\vec{F}(x,y)=\\langle ' + c.P + ',\\ ' + c.Q + '\\rangle$ el flujo de calor alrededor de una pieza triangular. Utiliza el Teorema de Green para evaluar $\\oint_C\\vec{F}\\cdot d\\vec{r}$, siendo $C$ la curva dada por los lados del triángulo recorridos en el orden ' + recorrido + '. Cuida la orientación. Escribe el resultado como entero, fracción o decimal.',
+    solucion:'El resultado es $' + fracTeX(res) + '$' + (horario ? ' (recorrido horario: signo negativo).' : ' (recorrido antihorario: signo positivo).'),
+    respuestaLaTeX:fracTeX(res),
+    acepta:[fracTxt(res)],
+    respuesta:fval(res),
+    tolerancia:0.001,
+    pista:'Green se enuncia para fronteras recorridas en sentido antihorario: $\\oint_C P\\,dx+Q\\,dy=\\iint_D\\left(\\frac{\\partial Q}{\\partial x}-\\frac{\\partial P}{\\partial y}\\right)dA$. Compara el sentido del recorrido dado con ese convenio.',
+    explicacion:'Paso 1. $P=' + c.P + '$ y $Q=' + c.Q + '$.<br>Paso 2. $\\frac{\\partial Q}{\\partial x}=' + c.Qx + '$ y $\\frac{\\partial P}{\\partial y}=' + c.Py + '$, así que el integrando es $' + c.ig + '$.<br>Paso 3. La región es $0\\le x\\le ' + m + '$, $0\\le y\\le ' + n + '-\\frac{' + n + '}{' + m + '}x$ y $\\iint_D(' + c.ig + ')\\,dA=' + fracTeX(I) + '$ (valor para recorrido antihorario).<br>Paso 4. El recorrido ' + recorrido + ' es ' + (horario ? 'HORARIO, por lo que el resultado es el negativo' : 'ANTIHORARIO, por lo que se usa el valor tal cual') + ': $' + fracTeX(res) + '$.'
+  };
+}
+ 
+/* ---- Ejercicio 7. Teorema de Stokes en un cubo sin una cara ---- */
+function vStokesCubo(){
+  var campos = [
+    {F:'xyz,\\ xy,\\ x^{2}yz', g:'y-xz', gs:function(z0){ return 'y-\\left(' + z0 + '\\right)x'; }, I:function(a,z0){ return 0; }},
+    {F:'xy,\\ x^{3}+z,\\ yz^{2}', g:'3x^{2}-x', gs:function(z0){ return '3x^{2}-x'; }, I:function(a,z0){ return 4*a*a*a*a; }},
+    {F:'-y,\\ x,\\ xyz', g:'2', gs:function(z0){ return '2'; }, I:function(a,z0){ return 8*a*a; }},
+    {F:'-y^{3},\\ xz,\\ xyz', g:'3y^{2}+z', gs:function(z0){ return '3y^{2}+\\left(' + z0 + '\\right)'; }, I:function(a,z0){ return 4*a*a*a*a + 4*a*a*z0; }}
+  ];
+  var c = pick(campos), a = rnd(1,2), fondo = rnd(0,1) === 0;
+  var z0 = fondo ? -a : a, s = fondo ? 1 : -1;
+  var I = c.I(a, z0), res = s * I;
+  var falta = fondo ? 'el fondo' : 'la tapa';
+  var presente = fondo ? 'la tapa y los cuatro lados' : 'el fondo y los cuatro lados';
+  var cara = fondo ? 'z=' + (-a) : 'z=' + a;
+  return {
+    tipo:'numerica',
+    problema:'Camila analiza el campo $\\vec{F}(x,y,z)=\\langle ' + c.F + '\\rangle$ sobre una carcasa en forma de cubo abierto. Utiliza el Teorema de Stokes para evaluar $\\iint_S \\text{rot}\\,\\vec{F}\\cdot d\\vec{S}$, donde $S$ consiste en ' + presente + ' (pero no ' + falta + ') del cubo con vértices $(\\pm' + a + ',\\pm' + a + ',\\pm' + a + ')$, orientada hacia afuera.',
+    solucion:'El resultado es $' + res + '$.',
+    respuestaLaTeX:String(res),
+    acepta:[String(res)],
+    respuesta:res,
+    tolerancia:0.001,
+    pista:'$S$ es una superficie abierta: su frontera es el borde de la cara que falta. Por Stokes puedes reemplazar $S$ por esa cara, con la orientación inducida, y en una cara horizontal solo importa la componente en $\\hat{k}$ del rotacional.',
+    explicacion:'Paso 1. La componente en $\\hat{k}$ del rotacional es $\\frac{\\partial Q}{\\partial x}-\\frac{\\partial P}{\\partial y}=' + c.g + '$.<br>Paso 2. A $S$ le falta ' + falta + ' (plano $' + cara + '$). Por Stokes, el flujo de $\\nabla\\times\\vec{F}$ por $S$ es el flujo por esa cara con la orientación inducida: normal $' + (fondo ? '+' : '-') + '\\hat{k}$ (es $+\\hat{k}$ si falta el fondo y $-\\hat{k}$ si falta la tapa).<br>Paso 3. En $' + cara + '$: $(\\nabla\\times\\vec{F})\\cdot\\hat{k}=' + c.gs(z0) + '$.<br>Paso 4. Integrando sobre $[-' + a + ',' + a + ']\\times[-' + a + ',' + a + ']$ se obtiene $' + I + '$.<br>Paso 5. Con el signo de la orientación ($' + (s === 1 ? '+' : '-') + '$): $' + res + '$.'
+  };
+}
+ 
+/* ---- Ejercicio 8. Teorema de la Divergencia en una esfera ---- */
+function vDivergenciaEsfera(){
+  var t = rnd(0,4), R, k, Ftex, divTex, exp, pista;
+  var triadas = [[1,1,1],[1,2,3],[2,2,2],[1,3,5],[3,3,3]];
+  if (t <= 2) {
+    R = rnd(1,2);
+    var fac = t === 2 ? 1 : 3;
+    Ftex = t === 0 ? '(x^{3}+y^{3})\\mathbf{i}+(y^{3}+z^{3})\\mathbf{j}+(z^{3}+x^{3})\\mathbf{k}'
+         : (t === 1 ? '\\langle x^{3},\\ y^{3},\\ z^{3}\\rangle' : '\\langle xz^{2},\\ x^{2}y,\\ y^{2}z\\rangle');
+    divTex = t === 2 ? 'x^{2}+y^{2}+z^{2}' : '3x^{2}+3y^{2}+3z^{2}';
+    k = fr(4 * fac * R*R*R*R*R, 5 * 1);
+    exp = 'Paso 1. $\\nabla\\cdot\\vec{F}=' + divTex + '=' + (fac === 1 ? '' : fac) + '\\rho^{2}$ (con $\\rho^2=x^2+y^2+z^2$).<br>Paso 2. Por el Teorema de la Divergencia, el flujo es $\\iiint_E\\nabla\\cdot\\vec{F}\\,dV$, con $E$ la bola de radio $' + R + '$.<br>Paso 3. En esféricas, $dV=\\rho^2\\sin\\varphi\\,d\\rho\\,d\\varphi\\,d\\theta$: $' + (fac === 1 ? '' : fac + '\\cdot') + '\\int_0^{2\\pi}\\int_0^{\\pi}\\int_0^{' + R + '}\\rho^{4}\\sin\\varphi\\,d\\rho\\,d\\varphi\\,d\\theta$.<br>Paso 4. Las tres integrales valen $\\frac{' + R + '^5}{5}$, $2$ y $2\\pi$, así que el flujo es $' + fac + '\\cdot\\frac{' + (R*R*R*R*R) + '}{5}\\cdot4\\pi=' + conPiF(k).tex + '$.';
+    pista = 'Calcula la divergencia: en este campo depende solo de $\\rho^2=x^2+y^2+z^2$. Convierte a coordenadas esféricas, con $dV=\\rho^2\\sin\\varphi\\,d\\rho\\,d\\varphi\\,d\\theta$.';
+  } else if (t === 3) {
+    R = rnd(1,3);
+    Ftex = '\\langle x^{2},\\ y^{2},\\ z^{2}\\rangle';
+    k = fr(0);
+    exp = 'Paso 1. $\\nabla\\cdot\\vec{F}=2x+2y+2z$.<br>Paso 2. Por el Teorema de la Divergencia, el flujo es $\\iiint_E(2x+2y+2z)\\,dV$, con $E$ la bola de radio $' + R + '$ centrada en el origen.<br>Paso 3. La bola es simétrica respecto de cada plano coordenado y cada término es impar en su variable, así que $\\iiint_E x\\,dV=\\iiint_E y\\,dV=\\iiint_E z\\,dV=0$.<br>Paso 4. El flujo es $0$.';
+    pista = 'Calcula la divergencia y observa su paridad: cada término es impar en una variable y la bola está centrada en el origen.';
+  } else {
+    R = rnd(1,3);
+    var tr = pick(triadas), sm = tr[0] + tr[1] + tr[2];
+    Ftex = '\\langle ' + term(tr[0],'x') + ',\\ ' + term(tr[1],'y') + ',\\ ' + term(tr[2],'z') + '\\rangle';
+    k = fr(sm * 4 * R*R*R, 3);
+    exp = 'Paso 1. $\\nabla\\cdot\\vec{F}=' + tr[0] + '+' + tr[1] + '+' + tr[2] + '=' + sm + '$, constante.<br>Paso 2. Por el Teorema de la Divergencia, el flujo es $' + sm + '\\cdot V$, con $V$ el volumen de la bola de radio $' + R + '$.<br>Paso 3. $V=\\frac{4}{3}\\pi\\cdot' + R + '^3=' + conPiF(fr(4*R*R*R, 3)).tex + '$.<br>Paso 4. Flujo $=' + sm + '\\cdot' + conPiF(fr(4*R*R*R, 3)).tex + '=' + conPiF(k).tex + '$.';
+    pista = 'La divergencia es constante: el flujo es esa constante por el volumen de la esfera, $\\frac{4}{3}\\pi R^3$.';
+  }
+  var p = conPiF(k);
+  return {
+    tipo:'numerica',
+    problema:'Ximena diseña un tanque esférico de radio $' + R + '$ y centro en el origen, y modela el movimiento del fluido con $\\vec{F}(x,y,z)=' + Ftex + '$. Utiliza el Teorema de la Divergencia para calcular el flujo de $\\vec{F}$ hacia afuera a través de la superficie $S$ del tanque, es decir, $\\iint_S\\vec{F}\\cdot d\\vec{S}$. ' + PI_NOTA,
+    solucion:'El flujo es $' + p.tex + '$.',
+    respuestaLaTeX:p.tex,
+    acepta:p.acepta,
+    respuesta:fval(k),
+    tolerancia:0.001,
+    pista:pista,
+    explicacion:exp
+  };
+}
+ 
+var FAMILIAS = [
+  function(){ return rnd(0,1) === 0 ? vPotencial() : vConservativo(); },
+  vRotDiv,
+  function(){ return rnd(0,1) === 0 ? vLineaConservativa() : vLineaRotacional(); },
+  vAreaEsfera,
+  vLamina,
+  vGreenTriangulo,
+  vStokesCubo,
+  vDivergenciaEsfera
+];
+var ultimaFamilia = -1;
+ 
+function genRepasoTercerParcial(){
+  var v;
+  do {
+    v = Math.floor(Math.random() * FAMILIAS.length);
+  } while (v === ultimaFamilia);
+  ultimaFamilia = v;
+  return FAMILIAS[v]();
+}
+ 
+/* ===================== UI ===================== */
+var ejercicio = null;
+var resuelto = false;
+var aciertos = 0;
+var intentos = 0;
+ 
+var elEnunciado = document.getElementById('enunciado');
+var elInput = document.getElementById('respuesta');
+var elFeedback = document.getElementById('feedback');
+var elPista = document.getElementById('pistaBox');
+var elExplicacion = document.getElementById('explicacionBox');
+var elArc = document.getElementById('mArc');
+var elInt = document.getElementById('mInt');
+ 
+/* Las respuestas simbólicas pueden llevar +C (potenciales): coincideAntiderivada lo ignora */
+function evaluar(ej, raw){
+  if (ej.tipo === 'numerica') {
+    var n = aNumero(raw);
+    if (!isNaN(n) && Math.abs(n - ej.respuesta) <= ej.tolerancia) { return true; }
+    return coincideTexto(raw, ej.acepta);
+  }
+  return coincideAntiderivada(raw, ej.acepta);
+}
+ 
+function nuevoEjercicio(){
+  ejercicio = genRepasoTercerParcial();
+  resuelto = false;
+  elEnunciado.innerHTML = ejercicio.problema;
+  elInput.value = '';
+  elFeedback.className = 'feedback';
+  elFeedback.innerHTML = '';
+  elPista.className = 'panel pista';
+  elPista.innerHTML = '';
+  elExplicacion.className = 'panel explicacion';
+  elExplicacion.innerHTML = '';
+  tiposet(elEnunciado);
+  elInput.focus();
+}
+ 
+function verificar(){
+  var raw = elInput.value;
+  if (raw.replace(/\s+/g,'') === '') {
+    elFeedback.className = 'feedback err';
+    elFeedback.innerHTML = 'Escribe una respuesta antes de verificar.';
+    return;
+  }
+  if (resuelto) {
+    elFeedback.className = 'feedback ok';
+    elFeedback.innerHTML = 'Ya resolviste este ejercicio. Pulsa N o el botón "Nuevo ejercicio" para continuar.';
+    return;
+  }
+  intentos++;
+  var ok = evaluar(ejercicio, raw);
+  if (ok) {
+    aciertos++;
+    resuelto = true;
+    elFeedback.className = 'feedback ok';
+    elFeedback.innerHTML =
+      '<div style="font-weight:600">✓ ¡Correcto!</div>' +
+      '<div>Escribiste: <code>' + escaparHTML(raw) + '</code></div>' +
+      '<div>En notación matemática: $' + ejercicio.respuestaLaTeX + '$</div>';
+    tiposet(elFeedback);
+  } else {
+    elFeedback.className = 'feedback err';
+    elFeedback.innerHTML = '✗ Todavía no. Revisa tu procedimiento (signos, orientación y límites de integración) o pide una pista.';
+  }
+  elArc.textContent = aciertos;
+  elInt.textContent = intentos;
+}
+ 
+function mostrarPista(){
+  elPista.innerHTML = '<span class="ptitle">Pista</span>' + ejercicio.pista;
+  elPista.className = 'panel pista visible';
+  tiposet(elPista);
+}
+ 
+function mostrarExplicacion(){
+  elExplicacion.innerHTML = '<span class="ptitle">Explicación</span>' + ejercicio.explicacion + '<br>' + ejercicio.solucion;
+  elExplicacion.className = 'panel explicacion visible';
+  tiposet(elExplicacion);
+}
+ 
+document.getElementById('btnNuevo').addEventListener('click', nuevoEjercicio);
+document.getElementById('btnVerificar').addEventListener('click', verificar);
+document.getElementById('btnPista').addEventListener('click', mostrarPista);
+document.getElementById('btnExplicacion').addEventListener('click', mostrarExplicacion);
+ 
+elInput.addEventListener('keydown', function(e){
+  if (e.key === 'Enter') { e.preventDefault(); verificar(); }
+});
+document.addEventListener('keydown', function(e){
+  var t = e.target;
+  var enCampo = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
+  if (!enCampo && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'n' || e.key === 'N')) {
+    nuevoEjercicio();
+  }
+});
+ 
+nuevoEjercicio();
+</script>
+</body>
+</html>
